@@ -1,16 +1,24 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
+import InputField from './inputfield';
+
 import { ethers } from "ethers";
 import "./App.css";
 import * as WavePortal from "./utils/WavePortal.json";
 
+const divStyle = {
+  display: 'flex',
+  alignItems: 'center'
+};
+
 const App = () => {
 
+  const waveForm = useRef(null);
   const [currentAccount, setCurrentAccount] = useState("");
   /**
    * Create a variable here that holds the contract address after you deploy!
    */
   const [ allWaves, setAllWaves] = useState([]);
-  const contractAddress = "0x2a4399789D107d88A8C305402c68C1CC11d4f3bB";
+  const contractAddress = "0x350d4393832B0864aF6be5C0c05258628A81082f";
   const contractABI = WavePortal.abi;
 
   const checkIfWalletIsConnected = async () => {
@@ -51,7 +59,6 @@ const App = () => {
       }
 
       const accounts = await ethereum.request({ method: "eth_requestAccounts" });
-
       console.log("Connected", accounts[0]);
       setCurrentAccount(accounts[0]);
     } catch (error) {
@@ -74,7 +81,10 @@ const App = () => {
         /*
         * Execute the actual wave from your smart contract
         */
-        const waveTxn = await wavePortalContract.wave('hard-coded message');
+        const form = waveForm.current
+        const message = `${form['message'].value}`;
+
+        const waveTxn = await wavePortalContract.wave(message, { gasLimit: 300000 });
         console.log("Mining...", waveTxn.hash);
 
         await waveTxn.wait();
@@ -91,6 +101,34 @@ const App = () => {
   };
 
   /*
+  const watchNewWaves = async () => {
+    try {
+        //emit NewWave(msg.sender, block.timestamp, _message);
+
+        const { ethereum } = window;
+        const provider = new ethers.providers.Web3Provider(ethereum);
+
+        const filter = {
+          address: contractAddress,
+          topics: [
+              // the name of the event, parnetheses containing the data type of each event, no spaces
+              utils.id("NewWave(address,address,uint256)")
+          ]
+        }
+
+        provider.on(filter, () => {
+          // do whatever you want here
+          // I'm pretty sure this returns a promise, so don't forget to resolve it
+        })
+
+
+      } catch (error) {
+        console.log(error);
+      }
+  };
+  */
+
+  /*
    * Create a method that gets all waves from your contract
    */
   const getAllWaves = async () => {
@@ -100,17 +138,8 @@ const App = () => {
         const provider = new ethers.providers.Web3Provider(ethereum);
         const signer = provider.getSigner();
         const wavePortalContract = new ethers.Contract(contractAddress, contractABI, signer);
-
-        /*
-         * Call the getAllWaves method from your Smart Contract
-         */
         const waves = await wavePortalContract.getAllWaves();
 
-
-        /*
-         * We only need address, timestamp, and message in our UI so let's
-         * pick those out
-         */
         let wavesCleaned = [];
         waves.forEach(wave => {
           wavesCleaned.push({
@@ -120,9 +149,6 @@ const App = () => {
           });
         });
 
-        /*
-         * Store our data in React State
-         */
         setAllWaves(wavesCleaned);
       } else {
         console.log("Ethereum object doesn't exist!")
@@ -133,24 +159,76 @@ const App = () => {
   };
 
   useEffect(() => {
+    
     checkIfWalletIsConnected();
-  }, [])
+    getAllWaves();
+
+    let wavePortalContract;
+    const onNewWave = (from, timestamp, message) => {
+      console.log("NewWave", from, timestamp, message);
+      setAllWaves(prevState => [
+        ...prevState,
+        {
+          address: from,
+          timestamp: new Date(timestamp * 1000),
+          message: message,
+        },
+      ]);
+    };
+
+    if (window.ethereum) {
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const signer = provider.getSigner();
+
+      wavePortalContract = new ethers.Contract(contractAddress, contractABI, signer);
+      wavePortalContract.on("NewWave", onNewWave);
+    }
+
+    return () => {
+      if (wavePortalContract) {
+        wavePortalContract.off("NewWave", onNewWave);
+      }
+    };
+
+  }, []);
 
   return (
     <div className="mainContainer">
       <div className="dataContainer">
-        <div className="header">
-          Not Every React has an equal and Node action 
+        <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+        }} className="header">
+          Hi I'm AoK, and I want to become a blockchain developer
         </div>
 
-        
-        <div className="description">
-          learning solidity today to build the apps of tomorrow
+        <br></br>
+
+        <div 
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }} 
+          className="description">
+          Tell me something zanie!
         </div>
 
-        <button className="waveButton" onClick={wave}>
-          Wave at Me
-        </button>
+        <div className="newWave" style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+
+          <form ref={waveForm}>
+            <InputField name={'message'}/>
+          </form>
+          <button className="waveButton" onClick={wave}>
+            Send
+          </button>
+        </div>
+
 
         {/*
         * If there is no currentAccount render this button
