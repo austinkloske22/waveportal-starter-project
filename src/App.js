@@ -4,6 +4,7 @@ import InputField from './inputfield';
 import { ethers } from "ethers";
 import "./App.css";
 import * as WavePortal from "./utils/WavePortal.json";
+import logo from './images/buildspace-icon.png';
 
 const divStyle = {
   display: 'flex',
@@ -194,14 +195,15 @@ const App = () => {
 
   return (
     <div className="mainContainer">
+
       <div className="dataContainer">
-        <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-        }} className="header">
-          Hi I'm AoK, and I want to become a blockchain developer
-        </div>
+
+        <nav>
+            <img src={logo} alt="buildspace-icon" className="nav--icon" />
+            <h3 className="nav--logo_text">Buildspace</h3>
+            <h4 className="nav--title">Ethereum Smart Contracts </h4>
+        </nav>
+
 
         <br></br>
 
@@ -210,6 +212,7 @@ const App = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            color: "white"
           }} 
           className="description">
           Tell me something zanie!
@@ -228,11 +231,12 @@ const App = () => {
             Send
           </button>
         </div>
-
-
+        
         {/*
         * If there is no currentAccount render this button
         */}
+        
+        
         {!currentAccount && (
           <button className="waveButton" onClick={connectWallet}>
             Connect Wallet
@@ -249,6 +253,7 @@ const App = () => {
         })}
       </div>
     </div>
+
   );
 }
 
